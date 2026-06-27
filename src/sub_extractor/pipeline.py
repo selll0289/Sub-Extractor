@@ -171,6 +171,9 @@ class Pipeline:
             0.35,
         )
 
+        # ---- Ensure output directory exists before extraction ----
+        job.output_dir.mkdir(parents=True, exist_ok=True)
+
         # ---- Stage 3: Extraction ----
         self._report(PipelineStage.EXTRACTION, "Extracting subtitles", 0.4)
         total_tracks = len(tracks_to_extract)

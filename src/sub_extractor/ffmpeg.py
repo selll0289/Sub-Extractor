@@ -97,7 +97,7 @@ def check_ffmpeg_available() -> tuple[bool, str, str]:
     try:
         ffmpeg_path = find_ffmpeg()
         result = subprocess.run(
-            [ffmpeg_path, "-version"], capture_output=True, text=True, timeout=10
+            [ffmpeg_path, "-version"], capture_output=True, encoding="utf-8", errors="replace", timeout=10
         )
         ffmpeg_ver = result.stdout.splitlines()[0] if result.stdout else "unknown"
     except (FFmpegNotFoundError, Exception):
@@ -106,7 +106,7 @@ def check_ffmpeg_available() -> tuple[bool, str, str]:
     try:
         ffprobe_path = find_ffprobe()
         result = subprocess.run(
-            [ffprobe_path, "-version"], capture_output=True, text=True, timeout=10
+            [ffprobe_path, "-version"], capture_output=True, encoding="utf-8", errors="replace", timeout=10
         )
         ffprobe_ver = result.stdout.splitlines()[0] if result.stdout else "unknown"
     except (FFmpegNotFoundError, Exception):
@@ -142,7 +142,7 @@ def ffprobe_json(file_path: Path) -> Dict[str, Any]:
         str(file_path),
     ]
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        result = subprocess.run(cmd, capture_output=True, encoding="utf-8", errors="replace", timeout=60)
     except subprocess.TimeoutExpired as exc:
         raise FFmpegExecutionError(
             f"ffprobe timed out probing: {file_path}", stderr="", returncode=None
@@ -220,7 +220,8 @@ class FFmpegRunner:
             result = subprocess.run(
                 cmd,
                 capture_output=capture,
-                text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=timeout,
             )
         except subprocess.TimeoutExpired as exc:

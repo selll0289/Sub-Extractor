@@ -171,7 +171,7 @@ class FrameExtractor:
             "-show_streams",
             str(self._video_path),
         ]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        result = subprocess.run(cmd, capture_output=True, encoding="utf-8", errors="replace", timeout=60)
 
         if result.returncode != 0:
             raise FFmpegExecutionError(f"ffprobe failed: {result.stderr}")

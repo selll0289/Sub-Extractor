@@ -51,7 +51,10 @@ class FFmpegExtractor(SubtitleExtractor):
             else "srt"
         )
         native_ext = get_extension(track.codec)
-        # Bitmap codecs are handled by BitmapSubExtractor, so we only deal with text
+        # Never convert text codecs to bitmap-only formats (sup, sub)
+        bitmap_formats = {"sup", "sub"}
+        if preferred in bitmap_formats:
+            return native_ext
         if preferred != native_ext:
             return preferred
         return native_ext
@@ -80,11 +83,12 @@ class FFmpegExtractor(SubtitleExtractor):
     def _build_output_path(self, track: SubtitleTrack, job: ExtractionJob) -> Path:
         """Build the output filename for a subtitle track."""
         ext = self.get_output_extension(track)
-        stem = job.input_video.stem
+        # Sanitize stem: Windows does not allow trailing dots/spaces in filenames
+        stem = job.input_video.stem.rstrip(". ")
 
-        # Build a label: language code, or "track_N", or "unknown"
+        # Build a label: language code with track index for disambiguation
         if track.language:
-            label = track.language
+            label = f"{track.language}_{track.index}"
         elif track.type == SubtitleType.SOFT:
             label = f"track_{track.index}"
         else:
@@ -103,7 +107,7 @@ class FFmpegExtractor(SubtitleExtractor):
             # Direct extraction — no transcoding needed
             args = [
                 "-i", str(job.input_video),
-                "-map", f"0:s:{self._stream_index(track)}",
+                "-map", f"0:{self._stream_index(track)}",
                 "-c:s", "copy",
                 "-y",
                 str(output_path),
@@ -113,7 +117,7 @@ class FFmpegExtractor(SubtitleExtractor):
             encoder = get_ffmpeg_encoder(target_ext)
             args = [
                 "-i", str(job.input_video),
-                "-map", f"0:s:{self._stream_index(track)}",
+                "-map", f"0:{self._stream_index(track)}",
                 "-c:s", encoder,
                 "-y",
                 str(output_path),
@@ -150,14 +154,10 @@ class FFmpegExtractor(SubtitleExtractor):
             self._runner.run(args, description=f"convert external subtitle {source.name}")
 
     def _stream_index(self, track: SubtitleTrack) -> int:
-        """Get the relative subtitle stream index (0-based among subtitle streams).
+        """Return the absolute stream index for ffmpeg mapping.
 
-        ffmpeg's ``0:s:N`` syntax expects the N-th subtitle stream, not the
-        absolute stream index. We derive this from the track's absolute index
-        by assuming subtitle streams are numbered contiguously from their first
-        occurrence — which is typically how ffprobe reports them.
-
-        For robustness, we pass the absolute stream index with ``0:INDEX``
-        syntax instead of ``0:s:N`` to avoid ambiguity.
+        We use ``0:N`` syntax (absolute index) rather than ``0:s:N`` (relative
+        subtitle index) because subtitle streams may have non-contiguous
+        absolute indices when interleaved with audio/video streams.
         """
         return track.index

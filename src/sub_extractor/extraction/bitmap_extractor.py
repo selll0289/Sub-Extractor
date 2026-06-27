@@ -76,11 +76,11 @@ class BitmapSubExtractor(SubtitleExtractor):
     def extract(self, track: SubtitleTrack, job: ExtractionJob) -> Path:
         """Extract a bitmap subtitle track to its native format."""
         ext = self.get_output_extension(track)
-        stem = job.input_video.stem
+        stem = job.input_video.stem.rstrip(". ")
 
-        # Build label for filename
+        # Build label for filename — include track index for disambiguation
         if track.language:
-            label = track.language
+            label = f"{track.language}_{track.index}"
         elif track.type == SubtitleType.SOFT:
             label = f"track_{track.index}"
         else:
@@ -152,7 +152,7 @@ class BitmapSubExtractor(SubtitleExtractor):
         track_id = str(track.index + 1)
         cmd = [mkv_path, "tracks", str(job.input_video), f"{track_id}:{output_path}"]
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        result = subprocess.run(cmd, capture_output=True, encoding="utf-8", errors="replace", timeout=120)
         if result.returncode != 0:
             raise ExtractionError(
                 f"mkvextract failed for track {track.index}",

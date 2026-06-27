@@ -90,7 +90,7 @@ class OCRHardSubExtractor(SubtitleExtractor):
 
         # Build output path
         ext = self.get_output_extension(track)
-        stem = job.input_video.stem
+        stem = job.input_video.stem.rstrip(". ")
         lang_suffix = job.ocr_language or "ocr"
         output_path = job.output_dir / f"{stem}.{lang_suffix}.ocr.{ext}"
 
