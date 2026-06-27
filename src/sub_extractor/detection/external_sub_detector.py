@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Dict, List
 
 from ..enums import SubtitleType
-from ..models import SubtitleTrack, VideoInfo
+from ..models import ExtractionJob, SubtitleTrack, VideoInfo
 from .base import SubtitleDetector
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,7 @@ class ExternalSubDetector(SubtitleDetector):
     def detection_type(self) -> SubtitleType:
         return SubtitleType.EXTERNAL
 
-    def detect(self, video_info: VideoInfo) -> list[SubtitleTrack]:
+    def detect(self, video_info: VideoInfo, job: ExtractionJob) -> list[SubtitleTrack]:
         parent = video_info.path.parent
         stem = video_info.stem
         tracks: list[SubtitleTrack] = []

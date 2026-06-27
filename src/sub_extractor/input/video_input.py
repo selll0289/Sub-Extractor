@@ -18,6 +18,14 @@ logger = logging.getLogger(__name__)
 _EXT_TO_FORMAT: dict[str, VideoFormat] = {
     ".mp4": VideoFormat.MP4,
     ".mkv": VideoFormat.MKV,
+    ".avi": VideoFormat.AVI,
+    ".mov": VideoFormat.MOV,
+    ".webm": VideoFormat.WEBM,
+    ".ts": VideoFormat.TS,
+    ".flv": VideoFormat.FLV,
+    ".wmv": VideoFormat.WMV,
+    ".m4v": VideoFormat.M4V,
+    ".ogv": VideoFormat.OGV,
 }
 
 # Recognised subtitle codec names from ffprobe
@@ -52,7 +60,10 @@ class VideoInputHandler(InputHandler):
     ``_supported`` set and ``_EXT_TO_FORMAT`` mapping.
     """
 
-    _supported: set[str] = {".mp4", ".mkv"}
+    _supported: set[str] = {
+        ".mp4", ".mkv", ".avi", ".mov", ".webm", ".ts",
+        ".flv", ".wmv", ".m4v", ".ogv",
+    }
 
     # --- InputHandler interface ---------------------------------------------
 

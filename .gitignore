@@ -37,3 +37,13 @@ Thumbs.db
 *.log
 output/
 out/
+
+# PyInstaller build artifacts
+*.spec.bak
+SubExtractor/
+
+# Claude AI
+.claude/
+
+# Dev scripts
+_write_gui.py

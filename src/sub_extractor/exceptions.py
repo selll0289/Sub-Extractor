@@ -67,3 +67,18 @@ class OutputError(SubExtractorError):
 class ConfigError(SubExtractorError):
     """Configuration is invalid."""
     pass
+
+
+class OCRError(SubExtractorError):
+    """An OCR operation failed during hardcoded subtitle extraction."""
+    pass
+
+
+class OCREngineNotAvailableError(SubExtractorError):
+    """The requested OCR engine is not installed."""
+    def __init__(self, engine: str):
+        self.engine = engine
+        super().__init__(
+            f"OCR engine '{engine}' is not available. "
+            f"Install with: pip install sub-extractor[ocr-{engine}]"
+        )

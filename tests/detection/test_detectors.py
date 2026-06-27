@@ -3,9 +3,17 @@
 from pathlib import Path
 
 from sub_extractor.enums import SubtitleType, VideoFormat
-from sub_extractor.models import SubtitleTrack, VideoInfo
+from sub_extractor.models import ExtractionJob, SubtitleTrack, VideoInfo
 from sub_extractor.detection.soft_sub_detector import SoftSubDetector
 from sub_extractor.detection.external_sub_detector import ExternalSubDetector
+
+
+def _make_job(input_video: Path) -> ExtractionJob:
+    """Create a minimal ExtractionJob for detector tests."""
+    return ExtractionJob(
+        input_video=input_video,
+        output_dir=Path("."),
+    )
 
 
 class TestSoftSubDetector:
@@ -23,7 +31,7 @@ class TestSoftSubDetector:
                 SubtitleTrack(index=3, codec="ass", language="chi", type=SubtitleType.SOFT),
             ],
         )
-        tracks = detector.detect(info)
+        tracks = detector.detect(info, _make_job(Path("/test.mkv")))
         assert len(tracks) == 2
         assert all(t.type == SubtitleType.SOFT for t in tracks)
 
@@ -38,7 +46,7 @@ class TestSoftSubDetector:
             height=720,
             subtitle_tracks=[],
         )
-        tracks = detector.detect(info)
+        tracks = detector.detect(info, _make_job(Path("/test.mp4")))
         assert len(tracks) == 0
 
     def test_detection_type(self):
@@ -64,7 +72,7 @@ class TestExternalSubDetector:
         )
 
         detector = ExternalSubDetector()
-        tracks = detector.detect(info)
+        tracks = detector.detect(info, _make_job(video))
 
         assert len(tracks) >= 1
         en_track = [t for t in tracks if t.language == "eng"]
@@ -88,7 +96,7 @@ class TestExternalSubDetector:
         )
 
         detector = ExternalSubDetector()
-        tracks = detector.detect(info)
+        tracks = detector.detect(info, _make_job(video))
 
         chi_tracks = [t for t in tracks if t.language == "chi"]
         assert len(chi_tracks) >= 1
@@ -108,7 +116,7 @@ class TestExternalSubDetector:
         )
 
         detector = ExternalSubDetector()
-        tracks = detector.detect(info)
+        tracks = detector.detect(info, _make_job(video))
         assert len(tracks) == 0
 
     def test_detection_type(self):

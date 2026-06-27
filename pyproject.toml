@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sub-extractor"
-version = "0.1.0"
-description = "Extract soft subtitles and external text subtitles from video files"
+version = "0.2.0"
+description = "Extract soft, bitmap, and hardcoded subtitles from video files — with OCR support"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
@@ -26,6 +26,7 @@ classifiers = [
 dependencies = [
     "click>=8.0",
     "rich>=13.0",
+    "numpy>=1.24",
 ]
 
 [project.optional-dependencies]
@@ -33,9 +34,28 @@ dev = [
     "pytest>=8.0",
     "pytest-mock>=3.12",
 ]
+gui = [
+    "PySide6>=6.5",
+]
+ocr-easyocr = [
+    "easyocr>=1.7",
+    "opencv-python>=4.8",
+]
+ocr-paddleocr = [
+    "paddleocr>=2.7",
+    "paddlepaddle>=3.0",
+    "opencv-python>=4.8",
+]
+ocr = [
+    "sub-extractor[ocr-easyocr]",
+]
+build = [
+    "pyinstaller>=6.0",
+]
 
 [project.scripts]
 sub-extractor = "sub_extractor.cli:main"
+sub-extractor-gui = "sub_extractor.gui:launch_gui"
 
 [project.urls]
 Repository = "https://github.com/Sub-Extractor/Sub-Extractor"

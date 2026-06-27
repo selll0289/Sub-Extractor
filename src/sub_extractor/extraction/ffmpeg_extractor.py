@@ -16,6 +16,7 @@ from ..ffmpeg import FFmpegRunner, find_ffmpeg
 from ..models import ExtractionJob, SubtitleTrack
 from .base import SubtitleExtractor
 from .codec_map import get_extension, get_ffmpeg_encoder
+from .bitmap_extractor import is_bitmap_codec
 
 logger = logging.getLogger(__name__)
 
@@ -36,17 +37,22 @@ class FFmpegExtractor(SubtitleExtractor):
     # --- SubtitleExtractor interface ----------------------------------------
 
     def can_extract(self, track: SubtitleTrack, job: ExtractionJob) -> bool:
-        """Can extract any soft or external track."""
-        return track.type in (SubtitleType.SOFT, SubtitleType.EXTERNAL)
+        """Can extract any soft or external text track (not bitmap)."""
+        return (
+            track.type in (SubtitleType.SOFT, SubtitleType.EXTERNAL)
+            and not is_bitmap_codec(track.codec)
+        )
 
     def get_output_extension(self, track: SubtitleTrack) -> str:
         """Return preferred output extension, respecting job preference for text codecs."""
-        preferred = job.preferred_sub_format if hasattr(self, '_job') else "srt"
-        # Use preferred format if set; otherwise use native extension
+        preferred = (
+            self._job.preferred_sub_format
+            if hasattr(self, '_job') and self._job
+            else "srt"
+        )
         native_ext = get_extension(track.codec)
-        # Only override if the track is not bitmap (bitmaps can't be converted yet)
-        bitmap_codecs = {"dvd_subtitle", "hdmv_pgs_subtitle", "pgs", "xsub"}
-        if track.codec.lower() not in bitmap_codecs and preferred != native_ext:
+        # Bitmap codecs are handled by BitmapSubExtractor, so we only deal with text
+        if preferred != native_ext:
             return preferred
         return native_ext
 

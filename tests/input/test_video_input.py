@@ -26,9 +26,39 @@ class TestVideoInputCanHandle:
 
     def test_rejects_unsupported(self, tmp_path):
         handler = VideoInputHandler()
-        p = tmp_path / "video.avi"
+        p = tmp_path / "video.rmvb"
         p.touch()
         assert handler.can_handle(p) is False
+
+    def test_handles_avi(self, tmp_path):
+        handler = VideoInputHandler()
+        p = tmp_path / "video.avi"
+        p.touch()
+        assert handler.can_handle(p) is True
+
+    def test_handles_mov(self, tmp_path):
+        handler = VideoInputHandler()
+        p = tmp_path / "video.mov"
+        p.touch()
+        assert handler.can_handle(p) is True
+
+    def test_handles_webm(self, tmp_path):
+        handler = VideoInputHandler()
+        p = tmp_path / "video.webm"
+        p.touch()
+        assert handler.can_handle(p) is True
+
+    def test_handles_ts(self, tmp_path):
+        handler = VideoInputHandler()
+        p = tmp_path / "video.ts"
+        p.touch()
+        assert handler.can_handle(p) is True
+
+    def test_handles_flv(self, tmp_path):
+        handler = VideoInputHandler()
+        p = tmp_path / "video.flv"
+        p.touch()
+        assert handler.can_handle(p) is True
 
     def test_rejects_nonexistent(self):
         handler = VideoInputHandler()
@@ -76,7 +106,7 @@ class TestVideoInputProcess:
     def test_process_unsupported_format(self):
         handler = VideoInputHandler()
         with pytest.raises(UnsupportedFormatError):
-            handler.process(Path("/test/test.avi"))
+            handler.process(Path("/test/test.rmvb"))
 
     @patch.object(Path, "is_file", return_value=True)
     def test_process_no_streams(self, mock_is_file):

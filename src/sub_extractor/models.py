@@ -76,6 +76,19 @@ class VideoInfo:
         return self.path.stem
 
 
+@dataclass(frozen=True)
+class HardSubtitleInfo:
+    """Information about hardcoded (burned-in) subtitles detected via OCR.
+
+    This is a read-only summary produced after OCR analysis completes.
+    """
+
+    detected: bool
+    language_hint: Optional[str] = None
+    frame_count_analyzed: int = 0
+    entries_found: int = 0
+
+
 # ---------------------------------------------------------------------------
 # Mutable pipeline job object
 # ---------------------------------------------------------------------------
@@ -97,6 +110,12 @@ class ExtractionJob:
     target_track_indices: Optional[List[int]] = None  # Filter: only these track indices
     include_external: bool = True               # Also copy sidecar subtitle files
     preferred_sub_format: str = "srt"           # Convert subtitles to this format
+    enable_hard_sub_ocr: bool = False           # Enable OCR for hardcoded (burned-in) subtitles
+    ocr_engine: str = "easyocr"                 # OCR engine: "easyocr" or "paddleocr"
+    ocr_language: str = "ch_sim"                # OCR language code (e.g., 'ch_sim', 'en')
+    ocr_frame_interval: float = 1.0             # Seconds between analyzed frames
+    ocr_confidence_threshold: float = 0.7       # Minimum confidence (0.0–1.0)
+    ocr_subtitle_region: str = "bottom"         # Subtitle region: "bottom", "top", "full"
 
     # -- Populated by pipeline stages ----------------------------------------
     video_info: Optional[VideoInfo] = None      # Set by Input stage

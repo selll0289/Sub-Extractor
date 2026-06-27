@@ -4,7 +4,7 @@ import logging
 from typing import List
 
 from ..enums import SubtitleType
-from ..models import SubtitleTrack, VideoInfo
+from ..models import ExtractionJob, SubtitleTrack, VideoInfo
 from .base import SubtitleDetector
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ class SoftSubDetector(SubtitleDetector):
     def detection_type(self) -> SubtitleType:
         return SubtitleType.SOFT
 
-    def detect(self, video_info: VideoInfo) -> List[SubtitleTrack]:
+    def detect(self, video_info: VideoInfo, job: ExtractionJob) -> List[SubtitleTrack]:
         tracks = [t for t in video_info.subtitle_tracks if t.type == SubtitleType.SOFT]
         logger.info(
             "Soft subtitle detector: %d track(s) found in %s",

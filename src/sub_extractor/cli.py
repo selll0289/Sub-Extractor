@@ -66,16 +66,19 @@ def _setup_logging(verbose: bool) -> logging.Logger:
 @click.version_option(version=__version__, prog_name="sub-extractor")
 @click.pass_context
 def main(ctx: click.Context) -> None:
-    """Sub Extractor — Extract soft subtitles from video files.
+    """Sub Extractor — Extract subtitles from video files.
 
-    Supports MP4 and MKV containers. Extracts embedded (soft) subtitle
-    tracks and discovers sidecar subtitle files (.srt, .ass, .vtt).
+    Supports MP4, MKV, AVI, MOV, WebM, TS, FLV, WMV, M4V, OGV containers.
+    Extracts embedded soft subtitles, bitmap (PGS/VobSub) subtitles,
+    discovers sidecar files, and OCR hardcoded subtitles.
 
     Examples:
 
         sub-extractor extract movie.mkv -o ./subtitles
 
         sub-extractor extract movie.mp4 -o ./out --languages eng,chi --no-video
+
+        sub-extractor extract movie.mkv -o ./out --ocr --ocr-language ch_sim
 
         sub-extractor info movie.mkv
 
@@ -104,7 +107,7 @@ def main(ctx: click.Context) -> None:
 )
 @click.option(
     "--sub-format",
-    type=click.Choice(["srt", "ass", "ssa", "vtt"], case_sensitive=False),
+    type=click.Choice(["srt", "ass", "ssa", "vtt", "sup", "sub"], case_sensitive=False),
     default="srt",
     help="Preferred subtitle output format (default: srt).",
 )
@@ -133,6 +136,35 @@ def main(ctx: click.Context) -> None:
     help="Show what would be extracted without executing.",
 )
 @click.option(
+    "--ocr/--no-ocr",
+    default=False,
+    help="Enable OCR extraction for hardcoded (burned-in) subtitles.",
+)
+@click.option(
+    "--ocr-engine",
+    type=click.Choice(["easyocr", "paddleocr"], case_sensitive=False),
+    default="easyocr",
+    help="OCR engine for hardcoded subtitle extraction (default: easyocr).",
+)
+@click.option(
+    "--ocr-language",
+    type=str,
+    default="ch_sim",
+    help="OCR language code (e.g., 'ch_sim', 'en', 'ch_sim+en').",
+)
+@click.option(
+    "--ocr-interval",
+    type=float,
+    default=1.0,
+    help="Seconds between analyzed frames for OCR (default: 1.0).",
+)
+@click.option(
+    "--ocr-confidence",
+    type=float,
+    default=0.7,
+    help="Minimum OCR confidence threshold 0.0-1.0 (default: 0.7).",
+)
+@click.option(
     "-v", "--verbose",
     is_flag=True,
     default=False,
@@ -149,6 +181,11 @@ def extract(
     tracks: Optional[str],
     no_external: bool,
     dry_run: bool,
+    ocr: bool,
+    ocr_engine: str,
+    ocr_language: str,
+    ocr_interval: float,
+    ocr_confidence: float,
     verbose: bool,
 ) -> None:
     """Extract subtitles from a video file.
@@ -178,6 +215,11 @@ def extract(
         target_track_indices=_parse_int_list(tracks),
         include_external=not no_external,
         preferred_sub_format=sub_format,
+        enable_hard_sub_ocr=ocr,
+        ocr_engine=ocr_engine,
+        ocr_language=ocr_language,
+        ocr_frame_interval=ocr_interval,
+        ocr_confidence_threshold=ocr_confidence,
     )
 
     # --- Dry run ---
@@ -317,8 +359,12 @@ def info(input: Path, verbose: bool) -> None:
 
     # --- External subtitles ---
     from .detection.external_sub_detector import ExternalSubDetector
+    from .models import ExtractionJob
     detector = ExternalSubDetector()
-    external = detector.detect(video_info)
+    external = detector.detect(
+        video_info,
+        ExtractionJob(input_video=input, output_dir=Path(".")),
+    )
     if external:
         etable = Table(title="External Subtitle Files")
         etable.add_column("Codec", style="cyan")
@@ -384,6 +430,19 @@ def check() -> None:
         console.print("[dim]Optional: mkvtoolnix (mkvextract) found — enhanced MKV support available.[/]")
     else:
         console.print("[dim]Optional: mkvtoolnix not found. MKV extraction will use ffmpeg (works fine).[/]")
+    console.print()
+
+    # Check OCR (optional, for hardcoded subtitle extraction)
+    from .ocr import OCR_AVAILABLE as ocr_ok, get_available_engines
+    engines = get_available_engines()
+    if engines:
+        console.print(f"[green]Optional: OCR available ({', '.join(engines)}) — hardcoded subtitle extraction enabled.[/]")
+    else:
+        console.print(
+            "[dim]Optional: OCR not installed. "
+            "For hardcoded subtitle extraction, install: "
+            "pip install sub-extractor[ocr-easyocr][/]"
+        )
     console.print()
 
 
@@ -457,6 +516,14 @@ def _do_dry_run(job: ExtractionJob) -> None:
             )
     else:
         table.add_row("Subtitles", "[dim]No embedded subtitle tracks detected[/]")
+
+    if job.enable_hard_sub_ocr:
+        table.add_row(
+            "OCR hard subs",
+            f"Engine: {job.ocr_engine}, "
+            f"Language: {job.ocr_language}, "
+            f"Interval: {job.ocr_frame_interval}s",
+        )
 
     if job.keep_video:
         table.add_row("Clean video", f"{job.input_video.stem}_clean{job.input_video.suffix}")

@@ -16,7 +16,14 @@ class VideoFormat(Enum):
 
     MP4 = "mp4"
     MKV = "mkv"
-    # Future: AVI = "avi", MOV = "mov", WEBM = "webm", TS = "ts"
+    AVI = "avi"
+    MOV = "mov"
+    WEBM = "webm"
+    TS = "ts"
+    FLV = "flv"
+    WMV = "wmv"
+    M4V = "m4v"
+    OGV = "ogv"
 
 
 class PipelineStage(Enum):

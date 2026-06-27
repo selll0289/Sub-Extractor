@@ -1,10 +1,15 @@
 """Abstract base class for subtitle detectors."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import List
+from typing import TYPE_CHECKING, List
 
 from ..enums import SubtitleType
 from ..models import SubtitleTrack, VideoInfo
+
+if TYPE_CHECKING:
+    from ..models import ExtractionJob
 
 
 class SubtitleDetector(ABC):
@@ -15,11 +20,12 @@ class SubtitleDetector(ABC):
     """
 
     @abstractmethod
-    def detect(self, video_info: VideoInfo) -> List[SubtitleTrack]:
+    def detect(self, video_info: VideoInfo, job: "ExtractionJob") -> List[SubtitleTrack]:
         """Find and return all subtitle tracks of this detector's type.
 
         Args:
             video_info: The probed video metadata from the Input stage.
+            job: The active extraction job (provides settings like --ocr flags).
 
         Returns:
             List of SubtitleTrack descriptors (may be empty).

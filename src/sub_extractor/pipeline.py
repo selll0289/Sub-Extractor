@@ -15,6 +15,7 @@ from typing import Callable, List, Optional
 
 from .detection.base import SubtitleDetector
 from .detection.external_sub_detector import ExternalSubDetector
+from .detection.hard_sub_detector import HardSubDetector
 from .detection.soft_sub_detector import SoftSubDetector
 from .enums import PipelineStage, SubtitleType
 from .exceptions import (
@@ -24,7 +25,9 @@ from .exceptions import (
     SubExtractorError,
 )
 from .extraction.base import SubtitleExtractor
+from .extraction.bitmap_extractor import BitmapSubExtractor
 from .extraction.ffmpeg_extractor import FFmpegExtractor
+from .extraction.ocr_extractor import OCRHardSubExtractor
 from .input.base import InputHandler
 from .input.video_input import VideoInputHandler
 from .models import ExtractionJob, SubtitleTrack
@@ -71,13 +74,16 @@ class Pipeline:
         self._detectors: list[SubtitleDetector] = [
             SoftSubDetector(),
             ExternalSubDetector(),
-            # Future: HardSubDetector() — OCR-based
+            HardSubDetector(),
         ]
 
         # Subtitle extractors — extract tracks to standalone files
+        # Order matters: BitmapSubExtractor checks bitmap codecs first;
+        # OCRHardSubExtractor handles hard-subs; FFmpegExtractor handles text codecs.
         self._extractors: list[SubtitleExtractor] = [
+            BitmapSubExtractor(),
+            OCRHardSubExtractor(),
             FFmpegExtractor(),
-            # Future: OCRHardSubExtractor()
         ]
 
         # Video processors — produce clean video without subtitle tracks
@@ -146,7 +152,7 @@ class Pipeline:
         all_tracks: list[SubtitleTrack] = []
         for detector in self._detectors:
             try:
-                tracks = detector.detect(job.video_info)
+                tracks = detector.detect(job.video_info, job)
                 all_tracks.extend(tracks)
             except SubExtractorError as exc:
                 job.warnings.append(f"[Detection:{detector.detection_type.name}] {exc}")
